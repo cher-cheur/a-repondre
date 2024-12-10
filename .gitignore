@@ -32,3 +32,6 @@ Thumbs.db
 # Text files (except requirements.txt)
 *.txt
 !requirements.txt
+
+# Specific files to ignore
+extract_questions.py
