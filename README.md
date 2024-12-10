@@ -1,4 +1,4 @@
-# Arepondre
+# à repondre
 
 ## Description
 Arepondre est une application web Flask qui permet d'extraire et d'analyser des questions à partir de requêtes de recherche. Elle utilise l'API SerpAPI pour collecter des données et propose une interface web pour interagir avec le service.
@@ -7,7 +7,6 @@ Arepondre est une application web Flask qui permet d'extraire et d'analyser des 
 ```
 Arepondre/
 ├── templates/               # Templates HTML Flask
-├── extract_questions.py     # Module d'extraction de questions
 ├── main.py                 # Application Flask principale
 ├── question_collector.py    # Collecteur de questions
 ├── requirements.txt        # Dépendances Python
@@ -15,7 +14,7 @@ Arepondre/
 ```
 
 ## Prérequis
-- Python 3.x
+- Python 3.9+
 - Compte SerpAPI (pour la clé API)
 
 ## Installation
