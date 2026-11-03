@@ -5,18 +5,17 @@ from datetime import datetime
 import json
 
 class SerpAPIClient:
-    def __init__(self, test_mode=False):
+    def __init__(self, test_mode=False, max_requests=None):
         self.test_mode = test_mode
+        # Budget d'appels SerpAPI (payants) : None = illimité
+        self.max_requests = max_requests
+        self.request_count = 0
         
         # Liste des mots de début de question
         self.question_starters = [
             "comment", "quel", "quelle", "quels", "quelles",
             "pourquoi", "où", "quand", "qui", "combien"
         ]
-        
-        # Charger les fichiers de configuration
-        with open('data/google-domains.json', 'r', encoding='utf-8') as f:
-            self.google_domains = json.load(f)
         
         if not test_mode:
             load_dotenv()
@@ -25,6 +24,19 @@ class SerpAPIClient:
                 raise ValueError("La clé API SerpAPI n'est pas configurée dans le fichier .env")
             
         self.base_url = "https://serpapi.com/search"
+
+    def budget_exhausted(self):
+        return self.max_requests is not None and self.request_count >= self.max_requests
+
+    def _get(self, params):
+        """Un appel SerpAPI, compté et soumis au budget. None si le budget est épuisé."""
+        if self.budget_exhausted():
+            print(f"Budget de {self.max_requests} requêtes SerpAPI atteint, arrêt.")
+            return None
+        self.request_count += 1
+        response = requests.get(self.base_url, params=params, timeout=30)
+        response.raise_for_status()
+        return response.json()
 
     def search(self, query, google_domain="google.fr", gl="fr", hl="fr", location="France"):
         """
@@ -56,10 +68,10 @@ class SerpAPIClient:
             
         try:
             print(f"\nRequête pour : '{query}' (Domaine: {google_domain}, Pays: {gl}, Langue: {hl}, Location: {location})")
-            response = requests.get(self.base_url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            
+            data = self._get(params)
+            if data is None:
+                return []
+
             # Si aucune question n'est trouvée, essayer avec les mots de début de question
             related_questions = data.get('related_questions', [])
             if not related_questions:
@@ -70,9 +82,9 @@ class SerpAPIClient:
                     params['q'] = modified_query
                     print(f"Essai avec : '{modified_query}'")
                     
-                    response = requests.get(self.base_url, params=params)
-                    response.raise_for_status()
-                    data = response.json()
+                    data = self._get(params)
+                    if data is None:
+                        break
                     related_questions = data.get('related_questions', [])
                     
                     if related_questions:
