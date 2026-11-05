@@ -2,10 +2,13 @@ from serpapi_client import SerpAPIClient
 from collections import Counter
 import json
 from datetime import datetime
+import os
 
 COST_PER_REQUEST = 0.015  # Coût en USD par requête SerpAPI
+# Nombre maximal d'appels SerpAPI pour une collecte (plafonne le coût)
+MAX_REQUESTS_PER_COLLECTION = int(os.getenv('MAX_REQUESTS_PER_COLLECTION', '20'))
 
-def collect_questions(initial_keyword, max_depth=2):
+def collect_questions(initial_keyword, max_depth=2, max_requests=MAX_REQUESTS_PER_COLLECTION):
     """
     Collecte récursivement les questions à partir d'un mot-clé initial en utilisant l'API de recherche Google.
     
@@ -15,12 +18,12 @@ def collect_questions(initial_keyword, max_depth=2):
     """
     def _collect_recursive(query, depth, all_questions, request_count):
         """Fonction récursive interne pour collecter les questions"""
-        if depth >= max_depth:
+        if depth >= max_depth or client.budget_exhausted():
             return request_count
         
         # Faire la recherche pour la requête actuelle
         questions = client.search(query)
-        request_count += 1
+        request_count = client.request_count
         
         if not questions:
             return request_count
@@ -40,12 +43,13 @@ def collect_questions(initial_keyword, max_depth=2):
         
         return request_count
     
-    client = SerpAPIClient()
+    client = SerpAPIClient(max_requests=max_requests)
     all_questions = set()  # Pour stocker les questions uniques
     request_count = 0  # Compteur de requêtes
     
     print(f"\nRecherche initiale pour : '{initial_keyword}'")
-    request_count = _collect_recursive(initial_keyword, 0, all_questions, request_count)
+    _collect_recursive(initial_keyword, 0, all_questions, request_count)
+    request_count = client.request_count
     
     # Calculer le coût total
     total_cost = request_count * COST_PER_REQUEST
@@ -55,7 +59,8 @@ def collect_questions(initial_keyword, max_depth=2):
     print(f"Nombre total de requêtes effectuées : {request_count}")
     print(f"Coût total estimé : ${total_cost:.2f} USD")
     print(f"Nombre total de questions uniques : {len(all_questions)}")
-    print(f"Coût par question unique : ${(total_cost/len(all_questions)):.3f} USD")
+    if all_questions:
+        print(f"Coût par question unique : ${(total_cost/len(all_questions)):.3f} USD")
     print("\nQuestions collectées :")
     for q in sorted(all_questions):
         print(f"- {q}")

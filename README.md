@@ -46,6 +46,15 @@ Créez un fichier `.env` à la racine du projet avec :
 SERPAPI_API_KEY=votre_clé_api_ici
 ```
 
+Variables optionnelles (protection des coûts SerpAPI) :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `MAX_REQUESTS_PER_COLLECTION` | `20` | Nombre maximal d'appels SerpAPI pour une recherche |
+| `RATE_LIMIT_SEARCHES` | `5` | Recherches autorisées par adresse IP sur la fenêtre |
+| `RATE_LIMIT_WINDOW_SECONDS` | `3600` | Durée de la fenêtre de limitation |
+| `FLASK_DEBUG` | non défini | Mettre `1` uniquement en local : le débogueur permet d'exécuter du code à distance |
+
 ## Utilisation
 1. Démarrer le serveur Flask
 ```bash
